@@ -1,4 +1,4 @@
- <p align="center"><img src="assets/img/logo.png" width="300"></p>
+ <p align="center"><img src="assets/img/logo.png" width="600"></p>
  
  <p align="center">	
   	 Woski is a simple fast PHP framework for the Realm
