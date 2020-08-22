@@ -2,13 +2,11 @@
  
  <p align="center">	
   	 Woski is a simple fast PHP framework for the Realm
-   
-    <a href="https://woski.xyz"><strong>Website</strong></a>
-    · 
+    <br />
     <a href="https://docs.woski.xyz" target="_blank"><strong>Explore the docs</strong></a>    <br />
     <br />
   </p>
-</p>
+ </p> 
 
 
 <br/><br/>
