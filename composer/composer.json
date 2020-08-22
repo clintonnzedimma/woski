@@ -1,0 +1,7 @@
+{
+    "require": {
+        "vlucas/phpdotenv": "^4.1",
+        "filp/whoops": "^2.7",
+        "phpunit/phpunit": "^6.5"
+    }
+}

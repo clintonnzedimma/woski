@@ -1,0 +1,13 @@
+node_modules/
+
+test/
+
+.env
+
+!public/img/products/.gitkeep
+
+!public/img/categories/.gitkeep
+
+woski.sublime-project
+
+woski.sublime-workspace

@@ -1,0 +1,4 @@
+#!/usr/bin/env php
+<?php
+require 'woski_autoload.php';
+$cli = new Woski\Cli\Cli();
