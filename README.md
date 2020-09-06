@@ -16,7 +16,7 @@
 Clone the repository
 
 ```shell
-$ git clone git@github.com:clintonnzedimma/woski.git
+$ git clone https://github.com:clintonnzedimma/woski.git
 ```
 
 
