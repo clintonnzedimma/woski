@@ -1,0 +1,34 @@
+{
+	"name": "clintonnzedimma/woski",
+	"description": "Woski is a simple fast PHP framework for the Realm.",
+	"keywords": [
+		"phpframework",
+		"woski",
+		"woskiphp"
+	],
+	"homepage": "https://woski.xyz",
+	"type": "project",
+	"license": "MIT",
+	"repositories": [
+		{
+			"type": "vcs",
+			"url": "https://github.com/clintonnzedimma/woski"
+		}
+	],
+	"authors": [
+		{
+			"name": "Clinton Nzedimma",
+			"email": "clintonnzedimma@gmail.com",
+			"homepage": "https://twitter.com/clintonnzedimma"
+		}
+	],
+	"require": {
+	},
+	"autoload": {
+	},
+	"config": {
+		"preferred-install": "dist",
+		"sort-packages": true,
+		"optimize-autoloader": true
+	}
+}
