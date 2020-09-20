@@ -10,6 +10,12 @@
 	"type": "project",
 	"license": "MIT",
 	"minimum-stability": "dev",
+	"repositories": [
+		{
+			"type": "vcs",
+			"url": "https://github.com/clintonnzedimma/woski"
+		}
+	],
 	"authors": [
 		{
 			"name": "Clinton Nzedimma",
