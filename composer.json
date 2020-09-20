@@ -9,6 +9,7 @@
 	"homepage": "https://woski.xyz",
 	"type": "project",
 	"license": "MIT",
+	"minimum-stability": "stable",
 	"repositories": [
 		{
 			"type": "vcs",
