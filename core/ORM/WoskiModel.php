@@ -16,6 +16,7 @@ abstract class WoskiModel extends WoskiORM
 	function __construct()
 	{
 		 parent::__construct();
+		 if(isset($this->has))$this->initHasAssociation();
 	}
 
 }

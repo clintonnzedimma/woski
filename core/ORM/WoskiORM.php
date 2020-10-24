@@ -13,32 +13,42 @@ use ReflectionClass;
 use Exception;
 use InvalidArgumentException;
 use PDO;
+use Prophecy\Exception\Doubler\ClassNotFoundException;
 
 abstract class WoskiORM extends AbstractDatabase
 {
-    protected $table;
+	protected $table;
 
-    protected $fields = [];
+	protected $fields = [];
 
-    protected $sql;
+	protected $sql;
 
-    protected $pk;
+	protected $pk;
 
     private $where;
+
+    protected $has;
 
     private $sort_data = null;
     
     private $reflection;
+
+    private $childModels = [
+        "class" => [],
+        "sourceKeys" => [],
+        "foreignKeys" => []
+    ];
+
     
 
 
-    function __construct()
-    {
-         parent::__construct();
-         $this->fieldsCompare();
-         $this->validatePK();  
+	function __construct()
+	{
+		 parent::__construct();
+		 $this->fieldsCompare();
+         $this->validatePK(); 
          $this->reflection = new ReflectionClass($this) ;
-    }
+	}
 
 
 
@@ -47,10 +57,10 @@ abstract class WoskiORM extends AbstractDatabase
    * @method getTableFields
    * @return array
    */
-    protected function getTableFields() {
-        $result = $this->pdo->query("SELECT * FROM $this->table");
-        return array_keys($result->fetch(PDO::FETCH_ASSOC));
-    }
+	protected function getTableFields() {
+		$result = $this->pdo->query("SELECT * FROM $this->table");
+		return array_keys($result->fetch(PDO::FETCH_ASSOC));
+	}
 
 
   /**
@@ -58,25 +68,25 @@ abstract class WoskiORM extends AbstractDatabase
    * @method fieldsCompare
    * @return null
    */
-    protected function fieldsCompare(){
-        $invalid_table_fields = array_diff($this->fields, $this->getTableFields());
-        if (count($invalid_table_fields) > 0) {
-            throw new Exception("WoskiORM: The field [".implode(", ",$invalid_table_fields)."] are not in the '$this->table' table  in {$this->reflection->getShortName()} model");
-        }
-    }
+	protected function fieldsCompare(){
+		$invalid_table_fields = array_diff($this->fields, $this->getTableFields());
+		if (count($invalid_table_fields) > 0) {
+			throw new Exception("WoskiORM: The field [".implode(", ",$invalid_table_fields)."] are not in the '$this->table' table  in {$this->reflection->getShortName()} model");
+		}
+	}
 
   /**
    * This method validates primary key
    * @method validatePK
    * @return null
    */
-    protected function validatePK(){
-        $is_validated = array_search($this->pk, $this->fields);
+	protected function validatePK(){
+		$is_validated = array_search($this->pk, $this->fields);
 
-        if (!$this->pk) throw new Exception("WoskiORM: Please set primary key in {$this->reflection->getShortName()} model"); 
+		if (!$this->pk) throw new Exception("WoskiORM: Please set primary key in {$this->reflection->getShortName()} model"); 
 
-        if($is_validated === false) throw new Exception("WoskiORM: Field '$this->pk' does not exists in the fields declared  in {$this->reflection->getShortName()} model"); 
-    }
+		if($is_validated === false) throw new Exception("WoskiORM: Field '$this->pk' does not exists in the fields declared  in {$this->reflection->getShortName()} model"); 
+	}
 
   /**
    * This method prepares values for binding
@@ -179,19 +189,19 @@ abstract class WoskiORM extends AbstractDatabase
    * @method create
    * @return object
    */
-    public function create($data) {
-        $this->data = $data;
-        $this->stmt = $this->pdo->prepare(self::insertQueryString());
-        self::bindParam($data);
+	public function create($data) {
+		$this->data = $data;
+		$this->stmt = $this->pdo->prepare(self::insertQueryString());
+		self::bindParam($data);
 
-        $exec = $this->stmt->execute();
+		$exec = $this->stmt->execute();
 
-        $this->count = $this->stmt->rowCount();
+		$this->count = $this->stmt->rowCount();
 
-        return (object) [
+		return (object) [
             "result" => ($this->count > 0) ? true : false,
             "status" => $exec
-        ];
+		];
     }
     
 
@@ -216,10 +226,10 @@ abstract class WoskiORM extends AbstractDatabase
         $exec = $this->stmt->execute();
         $this->count = $this->stmt->rowCount();
 
-        return (object) [
+		return (object) [
             "result" => ($this->count > 0) ? true : false,
             "status" => $exec
-        ];       
+		];       
     }
 
  /**
@@ -248,7 +258,7 @@ abstract class WoskiORM extends AbstractDatabase
         $exec = $this->stmt->execute();
         $this->count = $this->stmt->rowCount();
 
-        return (object) [
+       	return (object) [
                "result" => ($this->count > 0) ? true : false,
                "status" => $exec
        ];             
@@ -315,82 +325,87 @@ abstract class WoskiORM extends AbstractDatabase
    * @method validateSortData
    * @return null
    */  
-    private function validateSortData() 
-    {   
-        $allowed_sort_keys = [
-            "ORDER_BY", 
-            "LIMIT", 
-            "ASC",
-            "DESC"
-        ];
+  private function validateSortData($sort_data = null) 
+  {   
+      if($sort_data == null) {
+          $sort_data = $this->sort_data;
+      }
+      
+      $allowed_sort_keys = [
+          "ORDER_BY", 
+          "LIMIT", 
+          "ASC",
+          "DESC"
+      ];
 
-        if($this->sort_data != null) {
-            if(!is_array($this->sort_data)) {
-                throw new InvalidArgumentException("WoskiORM: Sorting parameter should be an associative array"); 
-            }else if(is_array($this->sort_data)) {
-                $sort_keys = array_keys($this->sort_data);
-
-                $invalid_keys = array_diff($sort_keys, $allowed_sort_keys);
-
-                foreach ($invalid_keys as $key => $value) {
-                    throw new InvalidArgumentException("WoskiORM: Sort key {$value} is invalid"); 
-                }
-
-                if(count($invalid_keys) == 0) {
-                    if(isset($this->sort_data['ORDER_BY'])){
-                        if(!in_array($this->sort_data['ORDER_BY'], $this->fields)) {
-                            throw new InvalidArgumentException("WoskiORM: Your ORDER_BY sort value of `{$this->sort_data['ORDER_BY']}` does not exist in fields declared in {$this->reflection->getShortName()} model");
-                        }
-                    }
-
-                    if(isset($this->sort_data['LIMIT'])){
-                        if(!is_int($this->sort_data['LIMIT']) 
-                            && !is_array($this->sort_data['LIMIT'])){
-                            throw new InvalidArgumentException("WoskiORM: Your LIMIT sort value must be an integer or array ");  
-                        } else if (is_int($this->sort_data['LIMIT'])
-                             && $this->sort_data['LIMIT'] <= 0){
-                            throw new InvalidArgumentException("WoskiORM: Your LIMIT sort value must be an integer greater 0");  
-                        } else if (is_array($this->sort_data['LIMIT'])){
-                            if(count($this->sort_data['LIMIT']) != 2) {
-                                throw new InvalidArgumentException("WoskiORM: Your LIMIT sort values array is invalid");  
-                            } else if(count($this->sort_data['LIMIT']) == 2) {
-                                 $i=0;
-                                 foreach ($this->sort_data['LIMIT'] as $key => $value) {
-                                     $i++;
-                                     if(!is_int($value)) {
-                                        throw new InvalidArgumentException("WoskiORM: Your LIMIT sort value at position $i is not an integer");
-                                     }
-                                     if(is_int($value) && $value < 0) {
-                                        throw new InvalidArgumentException("WoskiORM: Your LIMIT sort value must be an integer  greater or equal to 0 at position $i");
-                                     }
-
-                                 }
-                            }
-                        }
-                    }
-
-                    if(isset($this->sort_data['DESC']) && isset($this->sort_data['ASC'])) {
-                        if($this->sort_data['DESC'] === true 
-                            &&
-                            $this->sort_data['DESC'] === $this->sort_data['ASC']
-                        ) {
-                            throw new InvalidArgumentException("WoskiORM: Your ASC & DESC sort values cannot be both boolean TRUE "); 
-                        }
-                    }
-                    
-                    if(isset($this->sort_data['DESC']) && !is_bool($this->sort_data['DESC'])) {
-                        throw new InvalidArgumentException("WoskiORM: Your DESC sort value must be a boolean");      
-                    }
- 
-                    if(isset($this->sort_data['ASC']) && !is_bool($this->sort_data['ASC'])) {
-                        throw new InvalidArgumentException("WoskiORM: Your ASC sort value must be a boolean");      
-                    }
-
-                }
-
-            }
-        }
-    } 
+  
+      if($sort_data != null) {
+          if(!is_array($sort_data)) {
+              throw new InvalidArgumentException("WoskiORM: Sorting parameter should be an associative array"); 
+          }else if(is_array($sort_data)) {
+              $sort_keys = array_keys($sort_data);
+  
+              $invalid_keys = array_diff($sort_keys, $allowed_sort_keys);
+  
+              foreach ($invalid_keys as $key => $value) {
+                  throw new InvalidArgumentException("WoskiORM: Sort key {$value} is invalid"); 
+              }
+  
+              if(count($invalid_keys) == 0) {
+                  if(isset($sort_data['ORDER_BY'])){
+                      if(!in_array($sort_data['ORDER_BY'], $this->fields)) {
+                          throw new InvalidArgumentException("WoskiORM: Your ORDER_BY sort value of `{$sort_data['ORDER_BY']}` does not exist in fields declared in {$this->reflection->getShortName()} model");
+                      }
+                  }
+  
+                  if(isset($sort_data['LIMIT'])){
+                      if(!is_int($sort_data['LIMIT']) 
+                          && !is_array($sort_data['LIMIT'])){
+                          throw new InvalidArgumentException("WoskiORM: Your LIMIT sort value must be an integer or array ");  
+                      } else if (is_int($sort_data['LIMIT'])
+                           && $sort_data['LIMIT'] <= 0){
+                          throw new InvalidArgumentException("WoskiORM: Your LIMIT sort value must be an integer greater 0");  
+                      } else if (is_array($sort_data['LIMIT'])){
+                          if(count($sort_data['LIMIT']) != 2) {
+                              throw new InvalidArgumentException("WoskiORM: Your LIMIT sort values array is invalid");  
+                          } else if(count($sort_data['LIMIT']) == 2) {
+                               $i=0;
+                               foreach ($sort_data['LIMIT'] as $key => $value) {
+                                   $i++;
+                                   if(!is_int($value)) {
+                                      throw new InvalidArgumentException("WoskiORM: Your LIMIT sort value at position $i is not an integer");
+                                   }
+                                   if(is_int($value) && $value < 0) {
+                                      throw new InvalidArgumentException("WoskiORM: Your LIMIT sort value must be an integer  greater or equal to 0 at position $i");
+                                   }
+  
+                               }
+                          }
+                      }
+                  }
+  
+                  if(isset($sort_data['DESC']) && isset($sort_data['ASC'])) {
+                      if($sort_data['DESC'] === true 
+                          &&
+                          $sort_data['DESC'] === $sort_data['ASC']
+                      ) {
+                          throw new InvalidArgumentException("WoskiORM: Your ASC & DESC sort values cannot be both boolean TRUE "); 
+                      }
+                  }
+                  
+                  if(isset($sort_data['DESC']) && !is_bool($sort_data['DESC'])) {
+                      throw new InvalidArgumentException("WoskiORM: Your DESC sort value must be a boolean");      
+                  }
+  
+                  if(isset($sort_data['ASC']) && !is_bool($sort_data['ASC'])) {
+                      throw new InvalidArgumentException("WoskiORM: Your ASC sort value must be a boolean");      
+                  }
+  
+              }
+  
+          }
+      }
+  }
 
 
 
@@ -442,10 +457,69 @@ abstract class WoskiORM extends AbstractDatabase
    * @method findOneWhere
    * @return array
    */
-    public function findOneWhere($data)
+    public function findOneWhere($data, $options = null)
     {
         $this->data['conditions'] = $data;
-        return $this->fetch = $this->find()->stmt->fetch(PDO::FETCH_ASSOC);
+        $result = $this->fetch = $this->find()->stmt->fetch(PDO::FETCH_ASSOC);
+
+        if($options == null) return $result;
+
+
+        /* 
+           * Validate options later 
+        */
+        if($options != null && !is_array($options)) {
+            throw new InvalidArgumentException("WoskiORM: Array expected for parameter 2");
+        } else if(array_key_exists("INCLUDE", $options)){
+            $valid_include_keys = ["MODEL", "AS", "SORT"];
+
+            foreach ($options['INCLUDE'] as $includeKey => $value ) {    
+                if(!in_array($includeKey, $valid_include_keys)){
+                    throw new InvalidArgumentException("WoskiORM: '$key' is invalid to include");
+                } 
+            }
+
+            if(!is_string($options['INCLUDE']['MODEL'])) {
+                throw new InvalidArgumentException("WoskiORM: MODEL should be string");
+            } elseif(is_string($options['INCLUDE']['MODEL'])) {
+                $model = $this->reflection->getNamespaceName()."\\".$options['INCLUDE']['MODEL'];
+
+                if(!class_exists($model)){
+                    throw new InvalidArgumentException("WoskiORM: '$model' does not exist");
+                }
+                if(!in_array($model, $this->childModels['class'])){
+                    throw new InvalidArgumentException("WoskiORM: No association established between {$this->reflection->getShortName()} and {$options['INCLUDE']['MODEL']}");
+                }
+            } elseif(!is_string($options['INCLUDE']['AS'])){
+                throw new InvalidArgumentException("WoskiORM: AS key value should be string");
+            } elseif(!is_array($options['INCLUDE']['SORT'])) {
+                throw new InvalidArgumentException("WoskiORM: Your SORT value should be an array");
+            }
+        }
+
+
+        $modelNamespace = $this->reflection->getNamespaceName();
+
+        $modelChild =   $modelNamespace ."\\".$options['INCLUDE']['MODEL'];
+
+        $kIdx = array_keys($this->childModels['class'], $modelChild)[0];
+
+        $modelDataKey = (isset($options['INCLUDE']['AS'])) ? $options['INCLUDE']['AS'] : strtolower($options['INCLUDE']['MODEL']);
+
+        $modelChild = new $modelChild;
+
+
+        $childSort = (isset($options['INCLUDE']['SORT']))? $options['INCLUDE']['SORT']:null ;
+
+        if(!empty($result)){
+            $result[$modelDataKey] = [];
+            $result[$modelDataKey] = $modelChild->findAllWhere([
+                $this->childModels['foreignKeys'][$kIdx] => $result[$this->childModels['sourceKeys'][$kIdx]]
+            ], $childSort);
+        }
+   
+        
+        return $result;
     }
 
 
@@ -471,6 +545,52 @@ abstract class WoskiORM extends AbstractDatabase
         }
         return (self::findByPK($pk));
     }
+
+
+
+
+    
+
+  /**
+   * This initializes association
+   * @method initHasAssociation
+   * @return null
+   */   
+   protected function initHasAssociation(){
+        $modelNamespace = $this->reflection->getNamespaceName();
+        foreach ($this->has as $modelName => $assocKeys) { 
+            $modelClass = $modelNamespace.'\\'.$modelName;
+            try {
+                if(class_exists($modelClass)) {
+                   array_push($this->childModels['class'], $modelClass);
+
+                   foreach ($assocKeys as $key => $value) {
+                       if($key == "sourceKey") {
+                           if(!in_array($value,$this->fields)) {
+                              throw new InvalidArgumentException("WoskiORM: Source key '$value' for should be exist fields of {$this->reflection->getShortName()} Model");
+                           }
+
+                           array_push($this->childModels['sourceKeys'], ($value) ? $value :$this->pk);
+                       } 
+                       
+                       if($key == "foreignKey") {
+                          $modelClass = new $modelClass;
+
+                          if(!in_array($value, $modelClass->fields)) {
+                                throw new InvalidArgumentException("WoskiORM: Foreign key '$value' for should be exist fields of {$modelName} Model");
+                           }    
+
+                          array_push($this->childModels['foreignKeys'] , $value);
+                      }                         
+                      
+                   }
+                } 
+            } catch (Exception $e) {
+                throw new Exception($e);
+            }
+        }
+  }
+
 
 }
 
