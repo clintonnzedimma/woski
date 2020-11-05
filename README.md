@@ -16,7 +16,7 @@
 Clone the repository
 
 ```shell
-$ git clone https://github.com:clintonnzedimma/woski.git
+$ composer create-project clintonnzedimma/woski myApp dev-master
 ```
 
 
