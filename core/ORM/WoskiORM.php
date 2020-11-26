@@ -109,7 +109,7 @@ abstract class WoskiORM extends AbstractDatabase
    * @method where
    * @return string
    */
-    private function where($separator = "AND")
+    private function where($separator = " AND ")
     {
         return $this->where = (isset($this->data['conditions']))
                                 ? 'WHERE ' . self::conditions($separator)
@@ -213,7 +213,7 @@ abstract class WoskiORM extends AbstractDatabase
    * @return string
    */
 
-    public function delete($data, $separator = "AND")
+    public function delete($data, $separator = " AND ")
     {
         $this->data['conditions'] = $data['WHERE'];
 
@@ -306,6 +306,7 @@ abstract class WoskiORM extends AbstractDatabase
 
         $sql = "SELECT " . self::fields() . " FROM {$this->table} " . self::where()." ". $this->structureSortString();
 
+   
         $this->stmt = $this->pdo->prepare($sql);
 
         if (!empty($this->where)) {
