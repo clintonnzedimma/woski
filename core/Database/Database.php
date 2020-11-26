@@ -38,7 +38,12 @@ class Database extends AbstractDatabase
 	      }catch(PDOEXception $e){
 	          die($e->getMessage());
 	      }
-	    }
+		}
+		
+
+		public function connect(){
+			return $this->pdo;
+		}
 }
 
 ?>
