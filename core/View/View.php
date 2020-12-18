@@ -30,6 +30,12 @@ class View
 
 
 	public function assign($vars){
+		// assigning template globals
+		try {
+			$this->data = _import("config/tpl_globals.php");
+		} catch (\Throwable $th) {
+		}
+
 		foreach ($vars as $key => $value) {
 			  $this->data[$key] = $value;
 		}
