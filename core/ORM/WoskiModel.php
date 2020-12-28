@@ -13,9 +13,9 @@ use Woski\ORM\WoskiORM;
 abstract class WoskiModel extends WoskiORM
 {
 
-	function __construct()
+	function __construct($pdo)
 	{
-		 parent::__construct();
+		 parent::__construct($pdo);
 		 if(isset($this->has))$this->initHasAssociation();
 	}
 

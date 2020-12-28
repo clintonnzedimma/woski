@@ -8,29 +8,31 @@
 
 namespace Woski\ORM;
 
-use Woski\Database\AbstractDatabase;
 use ReflectionClass;
 use Exception;
 use InvalidArgumentException;
 use PDO;
 use Prophecy\Exception\Doubler\ClassNotFoundException;
 
-abstract class WoskiORM extends AbstractDatabase
+abstract class WoskiORM 
 {
-  protected $table;
 
-  protected $fields = [];
+    protected $pdo;
 
-  protected $sql;
+    protected $table;
 
-  protected $pk;
+    protected $fields = [];
+
+    protected $sql;
+
+    protected $pk;
 
     private $where;
 
     protected $has;
 
     private $sort_data = null;
-    
+
     protected $reflection;
 
     private $childModels = [
@@ -42,9 +44,9 @@ abstract class WoskiORM extends AbstractDatabase
     
 
 
-  function __construct()
+  function __construct($pdo)
   {
-     parent::__construct();
+         $this->pdo = $pdo;      
          $this->validatePK(); 
          $this->reflection = new ReflectionClass($this);      
   }
@@ -508,7 +510,7 @@ abstract class WoskiORM extends AbstractDatabase
 
         $modelDataKey = (isset($options['INCLUDE']['AS'])) ? $options['INCLUDE']['AS'] : strtolower($options['INCLUDE']['MODEL']);
 
-        $modelChild = new $modelChild;
+        $modelChild = new $modelChild($this->pdo);
 
 
         $childSort = (isset($options['INCLUDE']['SORT']))? $options['INCLUDE']['SORT']:null ;
@@ -576,7 +578,7 @@ abstract class WoskiORM extends AbstractDatabase
                        } 
                        
                        if($key == "foreignKey") {
-                          $modelClass = new $modelClass;
+                          $modelClass = new $modelClass($this->pdo);
 
                           if(!in_array($value, $modelClass->fields)) {
                                 throw new InvalidArgumentException("WoskiORM: Foreign key '$value' for should be exist fields of {$modelName} Model");
