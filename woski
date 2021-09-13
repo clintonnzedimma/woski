@@ -1,4 +1,21 @@
 #!/usr/bin/env php
 <?php
+/**
+ * Woski - A PHP framework
+ * @author Clinton Nzedimma <clinton@woski.xyz>
+ *
+ * @package Woski
+
+ * This bootstraps the CLI
+ **/
+
+define('ROOT', '');
+require 'composer/vendor/autoload.php'; 
+
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->load();
+
+require 'core/helpers.php';
 require 'woski_autoload.php';
+
 $cli = new Woski\Cli\Cli();

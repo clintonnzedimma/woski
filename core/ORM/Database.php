@@ -5,10 +5,7 @@
  *  @package ORM
 */ 
 
-
-
 namespace Woski\ORM;
-
 use \PDO;
 
 abstract class Database
@@ -40,7 +37,7 @@ abstract class Database
 	              break;
 	          }
 
-	      }catch(PDOEXception $e){
+	      }catch(\Exception $e){
 	          die($e->getMessage());
 	      }
 	    }

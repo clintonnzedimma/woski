@@ -190,6 +190,33 @@ protected function getRegexPattern($path)
    * @param  function $function A callback function that takes request array and response object
    * @return void
    */
+
+
+     /**
+   * Add the given route to 'GET', 'POST', 'PUT', 'PATCH' array for lookup
+   * @method all
+   * @param  string   $path     Route
+   * @param  function $callback Function to be called when the current equates the provided route; The callback must take request array and response object as parameters
+   * @return void
+   */
+  public function any($path, $callback){  
+    // GET  
+    $this->routes_no_regex['GET'][$path] = $callback;
+    $this->routes['GET'][$this->getRegexPattern($path)] = $callback;
+
+    // POST
+    $this->routes_no_regex['POST'][$path] = $callback;
+    $this->routes['POST'][$this->getRegexPattern($path)] = $callback;
+
+    // PUT
+    $this->routes_no_regex['PUT'][$path] = $callback;
+    $this->routes['PUT'][$this->getRegexPattern($path)] = $callback;
+
+    // PATCH
+    $this->routes_no_regex['PATCH'][$path] = $callback;
+    $this->routes['PATCH'][$this->getRegexPattern($path)] = $callback;
+}
+
   public function error($method, $function)
   {
 
@@ -336,10 +363,4 @@ protected function getRegexPattern($path)
 
     return null;
   }
-
-
-
-  
-
 }
-?>

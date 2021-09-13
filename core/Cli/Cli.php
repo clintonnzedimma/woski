@@ -1,10 +1,11 @@
 <?php 
 namespace Woski\Cli;
+use Woski\Cli\Utils\ModelMaker;
  final class Cli{
 	
 	public function __construct()
 	{
-		$options = getopt(null,['run', 'port:', 'help']);
+		$options = getopt(null,['run', 'port:', 'help', 'make:model:', 'table:']);
 
 		if (isset($options['run']) && isset($options['port'])) {
 			if (strlen($options['port']) < 4) {
@@ -30,8 +31,29 @@ namespace Woski\Cli;
 		    echo "--run\tDisplays your application on the browser using default port 3030 \n\n";
 
 		    echo "--run --port<number>\tDisplays your application on the port you choose\n";
-		    }
 		}
+
+
+
+
+/*  
+ This is creates a model class
+ * sample command is
+ * php woski --make:model [ModelName] --table [table_name]
+ * 
+*/
+
+			if(isset($options['make:model'])){
+				$modelMaker = new ModelMaker($options['make:model']);
+
+				if(isset($options['table'])) {
+					$modelMaker->create($options['table']);
+				}
+			
+
+			}
+		}
+
 	}
 
 ?>

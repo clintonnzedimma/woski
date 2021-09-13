@@ -1,17 +1,19 @@
 <?php 
 namespace Woski\Database;
-use Woski\Database\AbstractDatabase;
+
 use \PDO;
 
-class Database extends AbstractDatabase
+class Database 
 {
     protected  $pdo;
 
     public $conn;
 
-	 public function __construct()
+	 public function __construct($_CONFIG = null)
 	    {
-	    	$_CONFIG = _import(ROOT."/config/db.php");
+            if ($_CONFIG == null) {
+                $_CONFIG = _import(ROOT."/config/db.php");
+            }
 
 	        try{
 	          switch ($_CONFIG['DB_CONNECTION']) {
@@ -35,7 +37,7 @@ class Database extends AbstractDatabase
 
 	          $this->conn = $this->pdo;
 
-	      }catch(PDOEXception $e){
+	      }catch(\PDOEXception $e){
 	          die($e->getMessage());
 	      }
 		}
