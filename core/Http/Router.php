@@ -134,61 +134,66 @@ protected function getRegexPattern($path)
    * @method get
    * @param  string   $path     Route
    * @param  function $callback Function to be called when the current equates the provided route; The callback must take request array and response object as parameters
-   * @return void
+   * @return Router
    */
   public function get($path, $callback){    
         $this->routes_no_regex['GET'][$path] = $callback;
         $this->routes['GET'][$this->getRegexPattern($path)] = $callback;
+        return $this;
   }
   /**
    * Add the given route to 'POST' array for lookup
    * @method post
    * @param  string   $path     Route
    * @param  function $callback Function to be called when the current equates the provided route; The callback must take request array and response object as parameters
-   * @return void
+   * @return Router
    */
   public function post($path, $callback){   
       $this->routes_no_regex['POST'][$path] = $callback;
       $this->routes['POST'][$this->getRegexPattern($path)] = $callback;
+      return $this;
   }
   /**
    * Add the given route to 'PUT' array for lookup
    * @method put
    * @param  string   $path     Route
    * @param  function $callback Function to be called when the current equates the provided route; The callback must take request array and response object as parameters
-   * @return void
+   * @return Router
    */
   public function put($path, $callback) {
       $this->routes_no_regex['PUT'][$path] = $callback;
       $this->routes['PUT'][$this->getRegexPattern($path)] = $callback;
+      return $this;
   }
   /**
    * Add the given route to 'PATCH' array for lookup
    * @method patch
    * @param  string   $path     Route
    * @param  function $callback Function to be called when the current equates the provided route; The callback must take request array and response object as parameters
-   * @return void
+   * @return Router
    */
   public function patch($path, $callback){ 
       $this->routes_no_regex['PATCH'][$path] = $callback;
       $this->routes['PATCH'][$this->getRegexPattern($path)] = $callback;
+      return $this;
   }
   /**
    * Add the given route to 'DELETE' array for lookup
    * @method delete
    * @param  string   $path     Route
    * @param  function $callback Function to be called when the current equates the provided route; The callback must take request array and response object as parameters
-   * @return void
+   * @return Router
    */
   public function delete($path, $callback){   
       $this->routes_no_regex['PATCH'][$path] = $callback;
       $this->routes['DELETE'][$this->getRegexPattern($path)] = $callback;
+      return $this;
   }
   /**
    * Error Handler to set handler to be called when no routes are found
    * @method error
    * @param  function $function A callback function that takes request array and response object
-   * @return void
+   * @return Router
    */
 
 
@@ -197,7 +202,7 @@ protected function getRegexPattern($path)
    * @method all
    * @param  string   $path     Route
    * @param  function $callback Function to be called when the current equates the provided route; The callback must take request array and response object as parameters
-   * @return void
+   * @return Router
    */
   public function any($path, $callback){  
     // GET  
@@ -215,6 +220,7 @@ protected function getRegexPattern($path)
     // PATCH
     $this->routes_no_regex['PATCH'][$path] = $callback;
     $this->routes['PATCH'][$this->getRegexPattern($path)] = $callback;
+    return $this;
 }
 
   public function error($method, $function)

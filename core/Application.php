@@ -40,7 +40,6 @@ class Application extends Router
             if (!isset($this->routes[$http_method][$path])){
                 $this->routes[$http_method][$path] = $middlewareRouter->getRoutes()[$http_method][$raw_path];
               }
-
           }
         }
       } else {
