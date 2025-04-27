@@ -7,7 +7,7 @@
         "woskiphp"
     ],
     "homepage": "https://github.com/clintonnzedimma/woski",
-    "type": "library",
+    "type": "project",
     "license": "MIT",
     "minimum-stability": "dev",
     "require": {
