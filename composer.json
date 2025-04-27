@@ -1,39 +1,29 @@
 {
-	"name": "clintonnzedimma/woski",
-	"description": "Woski is a simple fast PHP framework for the Realm.",
-	"keywords": [
-		"phpframework",
-		"woski",
-		"woskiphp"
-	],
-	"homepage": "https://woski.xyz",
-	"type": "project",
-	"license": "MIT",
-	"minimum-stability": "dev",
-	"repositories": [
-		{
-			"type": "vcs",
-			"url": "https://github.com/clintonnzedimma/woski"
-		}
-	],
-	"authors": [
-		{
-			"name": "Clinton Nzedimma",
-			"email": "clintonnzedimma@gmail.com",
-			"homepage": "https://twitter.com/clintonnzedimma"
-		}
-	],
-	"require": {
-	},
-	"autoload": {
-		
-	},
-	"config": {
-		"preferred-install": "dist",
-		"sort-packages": true,
-		"optimize-autoloader": true
-	},
-	"require-dev": {
-		"phpunit/phpunit": "9"
-	}
+    "name": "clintonnzedimma/woskiphp",
+    "description": "Woski is a simple fast PHP framework for the Realm.",
+    "keywords": [
+        "phpframework",
+        "woski",
+        "woskiphp"
+    ],
+    "homepage": "https://github.com/clintonnzedimma/woski",
+    "type": "library",
+    "license": "MIT",
+    "minimum-stability": "dev",
+    "require": {
+        "php": ">=7.4",
+        "vlucas/phpdotenv": "^4.1",
+        "filp/whoops": "^2.7"
+    },
+    "autoload": {
+        "psr-4": {
+            "Woski\\": "core/",
+            "App\\": "app/"
+        }
+    },
+    "config": {
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "optimize-autoloader": true
+    }
 }
