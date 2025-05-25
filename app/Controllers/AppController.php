@@ -21,4 +21,3 @@ class AppController extends WoskiController
 
 }
 
-?>

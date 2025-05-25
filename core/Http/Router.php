@@ -9,7 +9,8 @@ namespace Woski\Http;
 use Exception;
 use InvalidArgumentException;
 
-use Woski\Http\StaticHandler;
+
+use Woski\Http\Response;
 use Woski\Middleware\Pipeline\Pipe;
 use Woski\Middleware\Pipeline\Action\Next;
 use Woski\Middleware\Pipeline\Action\Block;
@@ -51,33 +52,15 @@ class Router
    */
   public function __construct()
   {
-      if (isset($_SERVER)) {
-          if (isset($_SERVER['REQUEST_METHOD'])) {
-              $this->method  =  $_SERVER['REQUEST_METHOD'];
-              $this->request["method"] = $_SERVER['REQUEST_METHOD'];
-          }
-          $this->request["header"] = $this->getHTTPHeaders();
-
-          //default is 
-          if (isset($_SERVER['REQUEST_URI'])) {
-              $this->currentPath  =  strtok($_SERVER["REQUEST_URI"], '?'); // removing query string from request URI
-          }
+      
+      $this->request = new Request();
+    
+      $this->method = $_SERVER['REQUEST_METHOD'] ?? 'GET'; //default is GET
+      
+        //default is 
+      if (isset($_SERVER['REQUEST_URI'])) {
+          $this->currentPath  =  $this->normalizeRequestPath();
       }
-      if (isset($_POST)) {
-          $this->request["body"] = $_POST;
-          $this->request["raw"] = file_get_contents('php://input');
-      }
-      if (isset($_GET)) {
-          $this->request["query"] = $_GET;
-      }
-      if (isset($_FILES)) {
-          $this->request["files"] = $_FILES;
-      }
-      if (isset($_COOKIE)) {
-          $this->request["cookies"] = $_COOKIE;
-      }
-
-      $this->request['params'] = [];
       $this->response  =  new Response();
       $this->pipe = new Pipe;
       $this->routes = ['GET' =>[],'POST' =>[],'PUT' =>[],'DELETE' =>[],'PATCH' =>[]];
@@ -86,21 +69,7 @@ class Router
   }
 
 
-/**
- * Function to get headers related to HTTP,PHP_AUTH and REQUEST from $_SERVER
- * @method getHTTPHeaders
- * @return Array         returns an containing all information related to HTTP,PHP_AUTH and REQUEST from $_SERVER
- */
-protected function getHTTPHeaders()
-{
-    $header  =  [];
-    foreach ($_SERVER as $name  =>  $value) {
-        if (preg_match('/^HTTP_/', $name)||preg_match('/^PHP_AUTH_/', $name)||preg_match('/^REQUEST_/', $name)) {
-            $header[$name]  =  $value;
-        }
-    }
-    return $header;
-}
+
 
 /**
  * Turns given path into regular expression for comparison in complex routing
@@ -225,12 +194,17 @@ protected function getRegexPattern($path)
 
   public function error($method, $function)
   {
-
-    if ($_SERVER['REQUEST_METHOD']  ==  $method && !$this->validRoute) {
-      $this->errorFunction = $function;
-     } 
+      if (is_string($method) && $_SERVER['REQUEST_METHOD']  ==  $method && !$this->validRoute) {
+        $this->errorFunction = $function;
+      } 
+      if (is_array($method)) {
+        foreach ($method as $m) {
+          if ($_SERVER['REQUEST_METHOD']  ==  $m && !$this->validRoute) {
+            $this->errorFunction = $function;
+          }
+        }
+    }
   }
-
   /**
    * Function to get appropriate callback for the current PATH_INFO based on REQUEST_METHOD
    * @method getCallback
@@ -251,12 +225,16 @@ protected function getRegexPattern($path)
               foreach ($params as $key =>  $value) {
                   $this->request["params"][$key] = $value;
               }
-
-
+              $this->validRoute = true; 
               return $this->routes[$method][$name];
           }
       }
   }
+  
+  
+ 
+  
+  
 
 
 
@@ -271,20 +249,32 @@ protected function getRegexPattern($path)
   }
 
 
-  protected function dispatchMiddlewares(){
-    if ($this->middlewares) {
-      foreach ($this->middlewares as $middleware) { 
-        $fn = $middleware($this->request, $this->response,$this->pipe);
-
-        if ($fn instanceof Next) {
-           continue;
-        }else if ($fn instanceof Block) {
-          return;
-        }
-      }
-    }
+  
+  
+  
+  public function getMiddlewares(){
+    return $this->middlewares;
   }
 
+  
+  protected function callbackList(){
+    
+  }
+
+  
+  protected function getCallableName($callable) {
+    if (is_array($callable)) {
+        if (is_object($callable[0])) {
+            return get_class($callable[0]) . "::" . $callable[1];
+        }
+        return $callable[0] . "::" . $callable[1];
+    } elseif ($callable instanceof \Closure) {
+        return "Closure";
+    } elseif (is_string($callable)) {
+        return $callable;
+    }
+    return "Unknown Callable";
+}
 
   /**
    * Starts the routing process by matching current PATH_INFO to avaialable routes in array $routes
@@ -293,38 +283,45 @@ protected function getRegexPattern($path)
    */
   public function start()
   {   
-      $callback = $this->getCallBack('ANY');;
-      if ($callback) {
-          $this->objectifyRequest();
-          $this->dispatchMiddlewares();
-          return $callback($this->request, $this->response, $this->pipe);
+      // $this->objectifyRequest();
+      
+  
+      // Fetch route callbacks for this method
+      $route_callbacks = $this->getCallBack($this->method); // array or single callable
+  
+      $callbacks = $this->middlewares; // start with global middleware
+      if (is_array($route_callbacks)) {
+          $callbacks = array_merge($callbacks, $route_callbacks);
+      } elseif (is_callable($route_callbacks)) {
+          $callbacks[] = $route_callbacks;
       }
-      $callback = $this->getCallBack($this->method);
-      if ($callback) {
-          $this->objectifyRequest();
-          $this->dispatchMiddlewares();
-
-          if (is_array($callback)) {
-            $count = 0;
-            foreach ($callback as $call) {
-              $count ++;
-              $fn = $call($this->request, $this->response, $this->pipe);
-
-              if ($fn instanceof Next) {
-                 continue;
-              }else if ($fn instanceof Block) {
-                return;
-              }
-
-              if ($count == count($callback)) return;
-            }
+  
+      $count = 0;
+      foreach ($callbacks as $call) {
+          $count++;
+  
+          if (!is_callable($call)) {
+              throw new \InvalidArgumentException("Invalid callback: not callable");
           }
-          return $callback($this->request, $this->response, $this->pipe);
+  
+          $fn = $call($this->request, $this->response, $this->pipe); // Pass request, response, and pipeline to the callback
+  
+          if ($fn instanceof Next) continue;
+          if ($fn instanceof Block) return;
+  
+          // ✅ Only exit if we’ve finished all callbacks AND a valid route was matched.
+          // This prevents early return when no route exists, so the error handler can run.
+          if ($count === count($callbacks) && $route_callbacks) return;
+
+
       }
-      if (isset($this->errorFunction)) {
-          return ($this->errorFunction)(new Exception("Path not found!", 404), $this->response);
-      }
+      
+        if (isset($this->errorFunction)) {
+            return ($this->errorFunction)(new \Exception("Path not found!", 404), $this->response);
+        }
+
   }
+  
 
 
 
@@ -369,4 +366,18 @@ protected function getRegexPattern($path)
 
     return null;
   }
+  
+  protected function normalizeRequestPath(){
+    $requestUri = strtok($_SERVER["REQUEST_URI"], '?');
+    $scriptName = dirname($_SERVER['SCRIPT_NAME']);
+
+    // Remove the script directory (e.g. /myApp) from the URI
+    if (strpos($requestUri, $scriptName) === 0) {
+        $requestUri = substr($requestUri, strlen($scriptName));
+    }
+
+    // Ensure it starts with a slash
+    return '/' . ltrim($requestUri, '/');
+}
+
 }

@@ -64,7 +64,7 @@ class Response {
     header("Location: $new_location");
   }
 
-  public function render ($template, $vars = []){
+  public function render ($template, $vars = [], $status = null) {
       $view = new View($template);
 
       if (array_key_exists('_APP_GLOBALS',$vars)) {
@@ -73,7 +73,7 @@ class Response {
 
       $vars['_APP_GLOBALS'] = $this->config_handler->globals;
       $view->assign($vars);
+      if ($status) http_response_code($status);
   } 
 }
 
-?>

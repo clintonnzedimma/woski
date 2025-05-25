@@ -15,38 +15,77 @@ class Application extends Router
 		parent::__construct();
 	}
 
-  public function use ($arg1, $arg2 = null) {
+  public function use($arg1, $arg2 = null, $arg3 = null) {
+    // Case 1: Global middleware
+    if ($arg2 === null) {
+      if (is_callable($arg1)) {
+          $this->middlewares[] = $arg1;
+          return;
+      }
 
-      $middleware = null;
-      $routePath = null;
-      $middlewareRouter = null;
-
-      if (is_callable($arg1) && $arg2 == null) {
-        $middleware = $arg1;
-        array_push($this->middlewares, $middleware);
-      }else if (is_string($arg1) && $arg2 instanceof Router) {
-        $routePath = $arg1;
-        $middlewareRouter = $arg2;
-        $middlewareRouter->setBasePath($routePath); // setting base path for middleware router
-        $routes = $middlewareRouter->getRoutesNoRegex();
-
-        foreach ($routes as $http_method => $callables) {
-          foreach ($callables as $path => $call) {
-            // Getting path with without base path  
-            $raw_path = $this->getRegexPattern($path);    
-
-            $path = $this->getRegexPattern($routePath.$path);
-
-            if (!isset($this->routes[$http_method][$path])){
-                $this->routes[$http_method][$path] = $middlewareRouter->getRoutes()[$http_method][$raw_path];
+      if (is_array($arg1)) {
+          foreach ($arg1 as $mw) {
+              if (is_callable($mw)) {
+                  $this->middlewares[] = $mw;
+              } else {
+                  throw new \InvalidArgumentException("Global middleware must be callable");
               }
           }
-        }
-      } else {
-        throw new \InvalidArgumentException("Error in use function");
+          return;
       }
-  }
+    }
+
+
+    // Case 2: Prefix + Router only
+    if (is_string($arg1) && $arg2 instanceof Router) {
+        $prefix = $arg1;
+        $router = $arg2;
+        $router->setBasePath($prefix);
+
+        $rawRoutes = $router->getRoutesNoRegex();
+        foreach ($rawRoutes as $method => $routes) {
+            foreach ($routes as $path => $callback) {
+                $fullPath = $prefix . $path;
+                $regex = $this->getRegexPattern($fullPath);
+                $this->routes[$method][$regex] = $callback;
+                $this->routes_no_regex[$method][$fullPath] = $callback;
+            }
+        }
+
+        return;
+    }
+
+    // Case 3: Prefix + [middlewares] + Router
+    if (is_string($arg1) && is_array($arg2) && $arg3 instanceof Router) {
+        $prefix = $arg1;
+        $middlewares = $arg2;
+        $router = $arg3;
+
+        $router->setBasePath($prefix);
+
+        $rawRoutes = $router->getRoutesNoRegex();
+        foreach ($rawRoutes as $method => $routes) {
+            foreach ($routes as $path => $callback) {
+                $fullPath = $prefix . $path;
+                $regex = $this->getRegexPattern($fullPath);
+
+                // Merge middleware with original callback(s)
+                $handlers = array_merge($middlewares, is_array($callback) ? $callback : [$callback]);
+
+                $this->routes[$method][$regex] = $handlers;
+                $this->routes_no_regex[$method][$fullPath] = $handlers;
+            }
+        }
+
+        return;
+    }
+
+    throw new \InvalidArgumentException("Invalid arguments passed to use()");
+    
+  
+}
+
+
 
 
 }
-?>
