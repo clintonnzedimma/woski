@@ -42,7 +42,6 @@
   - `--run [--port=]` → quick dev server  
   - `--make:controller=Name`  
   - `--make:middleware=Name`  
-  - `--make:model=Name [--table=]`  
   - `--help`
 
 ---
@@ -106,7 +105,7 @@ mkdir -p storage/logs        # ensure log folder exists
 
 ## 🛠 Configuration
 
-- **.env variables** must be prefixed `WOSKIPHP_`, e.g.:
+- Core **.env variables** must be prefixed `WOSKIPHP_`, e.g.:
   ```
   WOSKIPHP_PORT=4000
   WOSKIPHP_MIDDLEWARE_DEBUG=true
