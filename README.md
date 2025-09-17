@@ -49,8 +49,8 @@
 ## 📦 Installation
 
 ```bash
-git clone https://github.com/your-username/woski.git
-cd woski
+composer create-project clintonnzedimma/woski my-app
+cd my-app
 composer install
 cp .env.example .env        # configure as needed
 mkdir -p storage/logs        # ensure log folder exists
